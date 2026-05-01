@@ -9,16 +9,13 @@
     let started: boolean = false;
 
     onMount(() => {
-        // init app
         app = new App(canvas);
 
-        // start listener
         document.addEventListener("click", () => {
             app.start();
             started = true;
         }, { once: true });
 
-        // render loop
         const render = () => {
             requestAnimationFrame(render);
             app.render();
@@ -36,12 +33,10 @@
         <span class="text-3xl font-bold mb-8">waveterrain</span>
 
         {#if !started}
-            <!-- onboarding -->
             <div class="flex-1 flex items-center">
                 <span class="text-xl">tap to start</span>
             </div>
         {:else}
-            <!-- main controls -->
             <ControlPane
                 bind:oscNote={app.oscNote}
                 bind:centerX={app.centerX}
@@ -51,23 +46,22 @@
                 bind:freqX={app.freqX}
                 bind:freqY={app.freqZ}
                 bind:phaseShift={app.phaseShift}
+                onLoadPreset={(preset) => app.loadPreset(preset)}
                 onImportTerrain={(file) => app.importTerrain(file)}
                 onResetTerrain={() => app.resetTerrain()}
             />
         {/if}
 
-        <!-- footer, copyright, links -->
         <span class="text-xs mt-8">
             (c)
             {new Date().getFullYear()}
             <a href="https://deermichel.me" target="_blank" class="underline">deermichel</a>
             &bull;
-            <a href="https://github.com/deermichel/waveterrain" target="_blank" class="underline">GitHub</a>
+            <a href="https://github.com/bellacaprino/waveterrain-mountain" target="_blank" class="underline">GitHub</a>
         </span>
     </div>
 </div>
 
-<!-- mobile safari viewport height scroll fix -->
 <style>
     @supports (-webkit-touch-callout: none) {
         @media (min-width: 1024px) {

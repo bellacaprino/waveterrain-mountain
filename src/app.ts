@@ -4,6 +4,7 @@ import SampledTerrain from "./sampled_terrain";
 import Scene from "./scene";
 import Terrain from "./terrain";
 import { terrainFromFile, TERRAIN_RESOLUTION } from "./mountain_terrain";
+import { type TerrainPreset } from "./presets";
 import { map } from "./utils";
 import WaveTerrainNode from "./waveterrain_node";
 
@@ -19,7 +20,7 @@ class App {
     private scene: Scene;
     private terrainProvider: SampledTerrain;
     private orbitProvider: SampledOrbit;
-    private hasImportedTerrain: boolean = false;
+    private hasCustomTerrain: boolean = false;
 
     // parameters
     get oscNote() { return map(this.node.parameters.get("oscNote").value, 0, 108, 0, 1); }
@@ -50,8 +51,7 @@ class App {
 
     public render() {
         if (this.node) {
-            // only poll processor terrain when no custom terrain is active
-            if (!this.hasImportedTerrain) {
+            if (!this.hasCustomTerrain) {
                 this.node.getTerrain(terrainSegments).then((terrain) => {
                     this.terrainProvider.setTerrain(terrain, terrainSegments);
                 });
@@ -60,20 +60,26 @@ class App {
                 this.orbitProvider.setOrbit(orbit, orbitSegments);
             });
         }
-
         this.scene.render();
     }
 
-    public async importTerrain(file: File): Promise<void> {
-        const terrain = await terrainFromFile(file);
-        this.terrainProvider.setTerrain(terrain, TERRAIN_RESOLUTION);
-        this.node.sendTerrain(terrain, TERRAIN_RESOLUTION);
-        this.hasImportedTerrain = true;
+    public loadPreset(preset: TerrainPreset): void {
+        this.applyTerrain(preset.generate());
     }
 
-    public resetTerrain() {
-        this.hasImportedTerrain = false;
+    public async importTerrain(file: File): Promise<void> {
+        this.applyTerrain(await terrainFromFile(file));
+    }
+
+    public resetTerrain(): void {
+        this.hasCustomTerrain = false;
         this.node.resetTerrain();
+    }
+
+    private applyTerrain(terrain: Float32Array): void {
+        this.terrainProvider.setTerrain(terrain, TERRAIN_RESOLUTION);
+        this.node.sendTerrain(terrain, TERRAIN_RESOLUTION);
+        this.hasCustomTerrain = true;
     }
 
     private async setupAudio() {

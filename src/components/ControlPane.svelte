@@ -2,6 +2,7 @@
     import Control from "./Control.svelte";
     import Slider from "./Slider.svelte";
     import XYPad from "./XYPad.svelte";
+    import { PRESETS, type TerrainPreset } from "../presets";
     import { SUPPORTED_EXTS } from "../mountain_terrain";
 
     export let oscNote: number;
@@ -13,85 +14,120 @@
     export let freqY: number;
     export let phaseShift: number;
 
+    export let onLoadPreset: (preset: TerrainPreset) => void;
     export let onImportTerrain: (file: File) => Promise<void>;
     export let onResetTerrain: () => void;
 
-    let terrainStatus: "idle" | "loading" | "loaded" | "error" = "idle";
-    let terrainFileName = "";
-    let terrainError = "";
+    type TerrainMode = "default" | "preset" | "imported";
+    let mode: TerrainMode = "default";
+    let activePresetName = "";
+    let importedFileName = "";
+    let importing = false;
+    let importError = "";
 
     const accept = SUPPORTED_EXTS.map(e => `.${e}`).join(",");
+
+    function handlePreset(preset: TerrainPreset) {
+        onLoadPreset(preset);
+        mode = "preset";
+        activePresetName = preset.name;
+        importError = "";
+    }
+
+    function handleDefault() {
+        onResetTerrain();
+        mode = "default";
+        activePresetName = "";
+        importedFileName = "";
+        importError = "";
+    }
 
     async function handleFileChange(event: Event) {
         const input = event.target as HTMLInputElement;
         const file = input.files?.[0];
         if (!file) return;
 
-        terrainStatus = "loading";
-        terrainFileName = file.name;
-        terrainError = "";
+        importing = true;
+        importError = "";
 
         try {
             await onImportTerrain(file);
-            terrainStatus = "loaded";
+            importedFileName = file.name;
+            mode = "imported";
+            activePresetName = "";
         } catch (err: any) {
-            terrainStatus = "error";
-            terrainError = err?.message ?? "Unknown error";
+            importError = err?.message ?? "Unknown error";
+        } finally {
+            importing = false;
+            input.value = "";
         }
-
-        // reset input so the same file can be re-selected
-        input.value = "";
     }
 
-    function handleReset() {
-        terrainStatus = "idle";
-        terrainFileName = "";
-        terrainError = "";
-        onResetTerrain();
+    function btn(active: boolean) {
+        const base = "border px-3 py-1 text-sm transition-colors";
+        return active
+            ? `${base} border-white bg-white text-black`
+            : `${base} border-white text-white hover:bg-white hover:text-black`;
     }
 </script>
 
 <div class="flex flex-col">
-    <!-- terrain import -->
+    <!-- terrain section -->
     <span class="text-xl self-center mb-4">--- Terrain ---</span>
 
-    <div class="flex flex-col items-center gap-2 px-4">
-        <div class="flex gap-2">
-            <label class="cursor-pointer border border-white px-3 py-1 text-sm hover:bg-white hover:text-black transition-colors">
-                {terrainStatus === "loading" ? "Loading..." : "Import Model"}
+    <div class="flex flex-col items-center gap-3 px-4">
+
+        <!-- default button -->
+        <button class={btn(mode === "default")} on:click={handleDefault}>
+            Default
+        </button>
+
+        <!-- presets -->
+        <div class="flex flex-col items-center gap-1 w-full">
+            <span class="text-xs text-gray-400 mb-1">Presets</span>
+            <div class="flex flex-wrap justify-center gap-2">
+                {#each PRESETS as preset}
+                    <button
+                        class={btn(mode === "preset" && activePresetName === preset.name)}
+                        on:click={() => handlePreset(preset)}
+                    >
+                        {preset.name}
+                    </button>
+                {/each}
+            </div>
+        </div>
+
+        <!-- import -->
+        <div class="flex flex-col items-center gap-1 w-full">
+            <span class="text-xs text-gray-400 mb-1">Import 3D Model / Heightmap</span>
+            <label class={btn(mode === "imported") + " cursor-pointer"}>
+                {importing ? "Loading..." : mode === "imported" ? "Replace File" : "Choose File"}
                 <input
                     type="file"
                     class="hidden"
                     {accept}
                     on:change={handleFileChange}
-                    disabled={terrainStatus === "loading"}
+                    disabled={importing}
                 />
             </label>
 
-            {#if terrainStatus === "loaded"}
-                <button
-                    class="border border-white px-3 py-1 text-sm hover:bg-white hover:text-black transition-colors"
-                    on:click={handleReset}
-                >
-                    Reset
-                </button>
+            {#if mode === "imported"}
+                <span class="text-xs text-green-400 text-center break-all max-w-xs">{importedFileName}</span>
             {/if}
-        </div>
 
-        {#if terrainStatus === "loaded"}
-            <span class="text-xs text-green-400 text-center break-all">{terrainFileName}</span>
-        {:else if terrainStatus === "error"}
-            <span class="text-xs text-red-400 text-center whitespace-pre-wrap">{terrainError}</span>
-        {:else}
-            <span class="text-xs text-gray-400 text-center">
+            {#if importError}
+                <span class="text-xs text-red-400 text-center whitespace-pre-wrap max-w-xs">{importError}</span>
+            {/if}
+
+            <span class="text-xs text-gray-500 text-center mt-1">
                 PNG/JPG heightmap &bull; OBJ &bull; GLTF/GLB &bull; STL<br/>
                 <a
                     href="https://terraining.ateliernonta.com/?debug=true"
                     target="_blank"
-                    class="underline"
-                >Get real terrain heightmaps</a>
+                    class="underline text-gray-400 hover:text-white"
+                >Get real-world terrain data ↗</a>
             </span>
-        {/if}
+        </div>
     </div>
 
     <!-- oscillator params -->
@@ -103,26 +139,18 @@
     <!-- orbit params -->
     <span class="text-xl self-center mb-4 mt-8">--- Orbit ---</span>
 
-    <!-- xy pads -->
     <div class="flex">
         <Control label="Center XY">
-            <XYPad
-                bind:x={centerX}
-                bind:y={centerY}
-            />
+            <XYPad bind:x={centerX} bind:y={centerY} />
         </Control>
 
         <div class="w-8"></div>
 
         <Control label="Radius XY">
-            <XYPad
-                bind:x={radiusX}
-                bind:y={radiusY}
-            />
+            <XYPad bind:x={radiusX} bind:y={radiusY} />
         </Control>
     </div>
 
-    <!-- sliders -->
     <div class="flex flex-col mt-8">
         <Control label="Frequency X">
             <Slider bind:v={freqX} resolution={8} defaultValue={1/8} />
