@@ -51,6 +51,8 @@
                 bind:freqX={app.freqX}
                 bind:freqY={app.freqZ}
                 bind:phaseShift={app.phaseShift}
+                onImportTerrain={(file) => app.importTerrain(file)}
+                onResetTerrain={() => app.resetTerrain()}
             />
         {/if}
 

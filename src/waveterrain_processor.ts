@@ -1,12 +1,18 @@
 import SimpleOrbit, { type SimpleOrbitParams } from "./simple_orbit";
 import SimpleTerrain from "./simple_terrain";
+import SampledTerrain from "./sampled_terrain";
 import Parameter from "./parameter";
 import { map, noteToFreq } from "./utils";
 
 class WaveTerrainProcessor extends AudioWorkletProcessor {
-    private terrainProvider: TerrainProvider;
+    private defaultTerrain: SimpleTerrain;
+    private importedTerrain: SampledTerrain | null = null;
     private orbitProvider: SimpleOrbit;
     private phase: number = 0;
+
+    private get terrainProvider(): TerrainProvider {
+        return this.importedTerrain ?? this.defaultTerrain;
+    }
 
     private oscFreq = new Parameter(noteToFreq(WaveTerrainProcessor.parameterDescriptors[0].defaultValue));
     private centerX = new Parameter(WaveTerrainProcessor.parameterDescriptors[1].defaultValue);
@@ -32,7 +38,7 @@ class WaveTerrainProcessor extends AudioWorkletProcessor {
 
     constructor() {
         super();
-        this.terrainProvider = new SimpleTerrain();
+        this.defaultTerrain = new SimpleTerrain();
         this.orbitProvider = new SimpleOrbit();
         this.port.onmessage = this.onMessage.bind(this);
     }
@@ -84,6 +90,10 @@ class WaveTerrainProcessor extends AudioWorkletProcessor {
             this.getTerrain(event.data.segments);
         } else if (event.data.type === "getOrbit") {
             this.getOrbit(event.data.segments);
+        } else if (event.data.type === "setTerrain") {
+            this.importedTerrain = new SampledTerrain(event.data.terrain, event.data.segments);
+        } else if (event.data.type === "resetTerrain") {
+            this.importedTerrain = null;
         }
     }
 

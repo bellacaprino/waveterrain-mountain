@@ -43,6 +43,14 @@ class WaveTerrainNode extends AudioWorkletNode {
         }
         return this.orbitDeferred.promise;
     }
+
+    sendTerrain(terrain: Float32Array, segments: number) {
+        this.port.postMessage({ type: "setTerrain", terrain, segments });
+    }
+
+    resetTerrain() {
+        this.port.postMessage({ type: "resetTerrain" });
+    }
 }
 
 export default WaveTerrainNode;

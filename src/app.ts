@@ -3,6 +3,7 @@ import SampledOrbit from "./sampled_orbit";
 import SampledTerrain from "./sampled_terrain";
 import Scene from "./scene";
 import Terrain from "./terrain";
+import { terrainFromFile, TERRAIN_RESOLUTION } from "./mountain_terrain";
 import { map } from "./utils";
 import WaveTerrainNode from "./waveterrain_node";
 
@@ -18,6 +19,7 @@ class App {
     private scene: Scene;
     private terrainProvider: SampledTerrain;
     private orbitProvider: SampledOrbit;
+    private hasImportedTerrain: boolean = false;
 
     // parameters
     get oscNote() { return map(this.node.parameters.get("oscNote").value, 0, 108, 0, 1); }
@@ -48,15 +50,30 @@ class App {
 
     public render() {
         if (this.node) {
-            this.node.getTerrain(terrainSegments).then((terrain) => {
-                this.terrainProvider.setTerrain(terrain, terrainSegments);
-            });
+            // only poll processor terrain when no custom terrain is active
+            if (!this.hasImportedTerrain) {
+                this.node.getTerrain(terrainSegments).then((terrain) => {
+                    this.terrainProvider.setTerrain(terrain, terrainSegments);
+                });
+            }
             this.node.getOrbit(orbitSegments).then((orbit) => {
                 this.orbitProvider.setOrbit(orbit, orbitSegments);
             });
         }
 
         this.scene.render();
+    }
+
+    public async importTerrain(file: File): Promise<void> {
+        const terrain = await terrainFromFile(file);
+        this.terrainProvider.setTerrain(terrain, TERRAIN_RESOLUTION);
+        this.node.sendTerrain(terrain, TERRAIN_RESOLUTION);
+        this.hasImportedTerrain = true;
+    }
+
+    public resetTerrain() {
+        this.hasImportedTerrain = false;
+        this.node.resetTerrain();
     }
 
     private async setupAudio() {
