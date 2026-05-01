@@ -84,7 +84,12 @@
             <span class="text-xs text-red-400 text-center whitespace-pre-wrap">{terrainError}</span>
         {:else}
             <span class="text-xs text-gray-400 text-center">
-                PNG/JPG heightmap &bull; OBJ &bull; GLTF/GLB &bull; STL
+                PNG/JPG heightmap &bull; OBJ &bull; GLTF/GLB &bull; STL<br/>
+                <a
+                    href="https://terraining.ateliernonta.com/?debug=true"
+                    target="_blank"
+                    class="underline"
+                >Get real terrain heightmaps</a>
             </span>
         {/if}
     </div>
