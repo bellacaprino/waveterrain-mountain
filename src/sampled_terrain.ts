@@ -19,11 +19,9 @@ class SampledTerrain implements TerrainProvider {
     evaluate(x: number, z: number) {
         if (this.segments === 0) return 0;
 
-        // wrap x and z to [-1, 1)
-        while (x < -1) x += 2;
-        while (x >= 1) x -= 2;
-        while (z < -1) z += 2;
-        while (z >= 1) z -= 2;
+        // clamp x and z to [-1, 1)
+        x = Math.max(-1, Math.min(1 - 1e-6, x));
+        z = Math.max(-1, Math.min(1 - 1e-6, z));
 
         // map [-1, 1) to [0, segments)
         const i = map(x, -1, 1, 0, this.segments);
@@ -33,9 +31,10 @@ class SampledTerrain implements TerrainProvider {
         const i_frac = i - i_int;
         const j_frac = j - j_int;
 
+        const seg1 = this.segments - 1;
         // bilinear interpolation
         const y = (i_: number, j_: number) => {
-            const idx = (i_ % this.segments) * this.segments + (j_ % this.segments);
+            const idx = Math.min(i_, seg1) * this.segments + Math.min(j_, seg1);
             return this.terrain[idx];
         };
         const v00 = y(i_int, j_int);

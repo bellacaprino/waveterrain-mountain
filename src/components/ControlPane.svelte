@@ -122,10 +122,10 @@
             <span class="text-xs text-gray-500 text-center mt-1">
                 PNG/JPG heightmap &bull; OBJ &bull; GLTF/GLB &bull; STL<br/>
                 <a
-                    href="https://terraining.ateliernonta.com/?debug=true"
+                    href="https://manticorp.github.io/unrealheightmap/index.html#latitude/27.99440141104617/longitude/86.92520141601562/zoom/13/outputzoom/13/width/505/height/505/outputformat/png16"
                     target="_blank"
                     class="underline text-gray-400 hover:text-white"
-                >Get real-world terrain data ↗</a>
+                >Get real-world heightmap data ↗</a>
             </span>
         </div>
     </div>

@@ -5,7 +5,7 @@ import { STLLoader } from "three/examples/jsm/loaders/STLLoader.js";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { map } from "./utils";
 
-export const TERRAIN_RESOLUTION = 128;
+export const TERRAIN_RESOLUTION = 256;
 
 const IMAGE_EXTS = ["png", "jpg", "jpeg", "webp"];
 const MODEL_EXTS = ["obj", "gltf", "glb", "stl"];
